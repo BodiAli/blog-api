@@ -1,7 +1,7 @@
 {
-  "name": "express-setup-code",
+  "name": "blog-api",
   "version": "1.0.0",
-  "description": "express template",
+  "description": "A RESTful API for Creating, Reading, Updating, and Deleting client side blog content.",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
