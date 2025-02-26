@@ -50,6 +50,7 @@ passport.use(
           done(null, false);
           return;
         }
+
         done(null, user);
       } catch (error) {
         done(error);
