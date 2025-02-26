@@ -40,8 +40,6 @@ passport.use(
     },
     async (payload, done) => {
       try {
-        console.log(payload);
-        // TODO: Check the info argument in the done callback
         const user = await prismaClient.user.findUnique({
           where: {
             id: payload.sub,
