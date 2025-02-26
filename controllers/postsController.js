@@ -1,3 +1,4 @@
+const passport = require("passport");
 const asyncHandler = require("express-async-handler");
 const prismaClient = require("../prisma/prismaClient");
 
