@@ -2,12 +2,12 @@ const bcrypt = require("bcrypt");
 const passport = require("passport");
 const { Strategy: LocalStrategy } = require("passport-local");
 const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
-const prismaClient = require("../prisma/prismaClient");
+const prisma = require("../prisma/prismaClient");
 
 passport.use(
   new LocalStrategy({ usernameField: "email", session: false }, async (email, password, done) => {
     try {
-      const user = await prismaClient.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: {
           email,
         },
@@ -40,7 +40,7 @@ passport.use(
     },
     async (payload, done) => {
       try {
-        const user = await prismaClient.user.findUnique({
+        const user = await prisma.user.findUnique({
           where: {
             id: payload.sub,
           },

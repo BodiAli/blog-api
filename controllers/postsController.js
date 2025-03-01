@@ -1,9 +1,9 @@
 const passport = require("passport");
 const asyncHandler = require("express-async-handler");
-const prismaClient = require("../prisma/prismaClient");
+const prisma = require("../prisma/prismaClient");
 
 exports.getPosts = asyncHandler(async (req, res) => {
-  const posts = await prismaClient.post.findMany({
+  const posts = await prisma.post.findMany({
     include: {
       User: true,
     },
