@@ -13,6 +13,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/users", usersRouter);
 app.use("/posts", postsRouter);
 
+app.use((err, req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ err });
+});
+
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
