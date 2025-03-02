@@ -6,6 +6,13 @@ const fs = require("node:fs/promises");
 const prisma = require("../prisma/prismaClient");
 const cloudinary = require("../config/cloudinaryConfig");
 
+async function test() {
+  // const posts = await prisma.post.findMany();
+  // console.log(posts);
+}
+
+test();
+
 const upload = multer({ dest: "uploads/" });
 
 exports.getPosts = asyncHandler(async (req, res) => {
@@ -90,9 +97,8 @@ exports.createPost = [
 
       cloudId = id;
       imgUrl = url;
+      await fs.rm(req.file.path);
     }
-
-    await fs.rm(req.file.path);
 
     const { title, content, published } = req.body;
     await prisma.post.create({
