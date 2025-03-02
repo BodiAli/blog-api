@@ -7,8 +7,7 @@ const prisma = require("../prisma/prismaClient");
 const cloudinary = require("../config/cloudinaryConfig");
 
 async function test() {
-  // const posts = await prisma.user.deleteMany();
-  // console.log(posts);
+  console.log("test function");
 }
 
 test();
