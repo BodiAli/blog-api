@@ -2,8 +2,13 @@ const passport = require("passport");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const { body, validationResult } = require("express-validator");
+const multer = require("multer");
+const fs = require("node:fs/promises");
 const prisma = require("../prisma/prismaClient");
 const issueJwt = require("../lib/issueJWT");
+const cloudinary = require("../config/cloudinaryConfig");
+
+const upload = multer({ dest: "uploads/" });
 
 const emptyErr = "can not be empty.";
 const maxLengthErr = "can not exceed 255 characters.";
@@ -55,9 +60,22 @@ const validateSignUp = [
       }
       return true;
     }),
+  body("userImage")
+    .optional({ values: "falsy" })
+    .custom(async (value, { req }) => {
+      if (req.file.size > 3145728) {
+        await fs.rm(req.file.path);
+        throw new Error("File cannot be larger than 3MB.");
+      } else if (!req.file.mimeType.startsWith("image/")) {
+        await fs.rm(req.file.path);
+        throw new Error("File uploaded is not of type image.");
+      }
+      return true;
+    }),
 ];
 
 exports.createUser = [
+  upload.single("userImage"),
   validateSignUp,
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -65,6 +83,20 @@ exports.createUser = [
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
       return;
+    }
+
+    let cloudId = null;
+    let profileImgUrl = null;
+
+    if (req.file) {
+      const { secure_url: url, public_id: id } = await cloudinary.uploader.upload(req.file.path, {
+        resource_type: "image",
+        format: "png",
+      });
+
+      cloudId = id;
+      profileImgUrl = url;
+      await fs.rm(req.file.path);
     }
 
     const { firstName, lastName, email, password } = req.body;
@@ -77,6 +109,12 @@ exports.createUser = [
         lastName,
         email,
         password: hashedPassword,
+        Profile: {
+          create: {
+            cloudId,
+            profileImgUrl,
+          },
+        },
       },
     });
 
