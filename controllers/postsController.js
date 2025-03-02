@@ -26,7 +26,7 @@ exports.getPosts = asyncHandler(async (req, res) => {
 });
 
 exports.getPost = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { postId: id } = req.params;
   const post = await prisma.post.findUnique({
     where: {
       id,
@@ -46,7 +46,7 @@ const emptyErr = "can not be empty.";
 const maxLengthErr = "can not exceed 255 characters.";
 const minLengthErr = "must be at least 5 characters.";
 
-const validatePostCreation = [
+const validatePost = [
   body("title")
     .trim()
     .notEmpty()
@@ -78,7 +78,7 @@ const validatePostCreation = [
 exports.createPost = [
   passport.authenticate("jwt", { session: false }),
   upload.single("postImage"),
-  validatePostCreation,
+  validatePost,
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -113,5 +113,98 @@ exports.createPost = [
     });
 
     res.status(201).json({ msg: "Post created successfully!" });
+  }),
+];
+
+exports.updatePost = [
+  passport.authenticate("jwt", { session: false }),
+  upload.single("postImage"),
+  validatePost,
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+
+    const { postId: id } = req.params;
+
+    const post = await prisma.post.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    let cloudId = null;
+    let imgUrl = null;
+
+    if (req.file) {
+      if (post.imgUrl) {
+        const { result } = await cloudinary.uploader.destroy(post.cloudId, { resource_type: "image" });
+
+        if (result !== "ok") {
+          throw new Error("Error updating post, please try again later.");
+        }
+      }
+
+      const { secure_url: url, public_id: publicId } = await cloudinary.uploader.upload(req.file.path, {
+        resource_type: "image",
+        format: "jpg",
+      });
+
+      cloudId = publicId;
+      imgUrl = url;
+
+      await fs.rm(req.file.path);
+    }
+
+    const { title, content, published } = req.body;
+
+    await prisma.post.update({
+      where: {
+        id,
+      },
+      data: {
+        title,
+        content,
+        published,
+        cloudId,
+        imgUrl,
+      },
+    });
+
+    res.status(200).json({ msg: "Post updated successfully!" });
+  }),
+];
+
+exports.deletePost = [
+  passport.authenticate("jwt", { session: false }),
+  asyncHandler(async (req, res) => {
+    const { postId: id } = req.params;
+
+    const post = await prisma.post.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (post.imgUrl) {
+      const koko = await cloudinary.uploader.destroy(post.cloudId, { resource_type: "image" });
+      console.log(koko);
+
+      const { result } = koko;
+
+      if (result !== "ok") {
+        throw new Error("Error deleting post, please try again later.");
+      }
+    }
+
+    await prisma.post.delete({
+      where: {
+        id,
+      },
+    });
+
+    res.sendStatus(204);
   }),
 ];
