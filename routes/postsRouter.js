@@ -4,12 +4,12 @@ const postsController = require("../controllers/postsController");
 const postsRouter = Router();
 
 postsRouter.get("/", postsController.getPosts);
-postsRouter.get("/:postId", postsController.getPost);
-
 postsRouter.post("/", postsController.createPost);
 
-postsRouter.put("/:postId", postsController.updatePost);
-
-postsRouter.delete("/:postId", postsController.deletePost);
+postsRouter
+  .route("/:postId")
+  .get(postsController.getPost)
+  .put(postsController.updatePost)
+  .delete(postsController.deletePost);
 
 module.exports = postsRouter;
