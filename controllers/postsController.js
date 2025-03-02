@@ -7,7 +7,7 @@ const prisma = require("../prisma/prismaClient");
 const cloudinary = require("../config/cloudinaryConfig");
 
 async function test() {
-  // const posts = await prisma.post.findMany();
+  // const posts = await prisma.user.deleteMany();
   // console.log(posts);
 }
 
@@ -18,7 +18,22 @@ const upload = multer({ dest: "uploads/" });
 exports.getPosts = asyncHandler(async (req, res) => {
   const posts = await prisma.post.findMany({
     include: {
-      User: true,
+      User: {
+        omit: {
+          email: true,
+          password: true,
+        },
+        include: {
+          Profile: {
+            select: {
+              profileImgUrl: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
     },
   });
 
@@ -30,6 +45,21 @@ exports.getPost = asyncHandler(async (req, res) => {
   const post = await prisma.post.findUnique({
     where: {
       id,
+    },
+    include: {
+      User: {
+        omit: {
+          email: true,
+          password: true,
+        },
+        include: {
+          Profile: {
+            select: {
+              profileImgUrl: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -135,6 +165,13 @@ exports.updatePost = [
       },
     });
 
+    if (!post) {
+      res
+        .status(404)
+        .json({ msg: "Post not found! it may have been moved, deleted or it might have never existed." });
+      return;
+    }
+
     let cloudId = null;
     let imgUrl = null;
 
@@ -187,6 +224,13 @@ exports.deletePost = [
         id,
       },
     });
+
+    if (!post) {
+      res
+        .status(404)
+        .json({ msg: "Post not found! it may have been moved, deleted or it might have never existed." });
+      return;
+    }
 
     if (post.imgUrl) {
       const koko = await cloudinary.uploader.destroy(post.cloudId, { resource_type: "image" });
