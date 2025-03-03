@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const postsRouter = require("./routes/postsRouter");
 const usersRouter = require("./routes/usersRouter");
+const commentsRouter = require("./routes/commentsRouter");
 
 require("./config/passportConfig");
 
@@ -12,6 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/users", usersRouter);
 app.use("/posts", postsRouter);
+app.use("/posts/:postId/comments", commentsRouter);
 
 app.use((err, req, res, _next) => {
   console.error(err);
