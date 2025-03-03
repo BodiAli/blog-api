@@ -7,7 +7,8 @@ const prisma = require("../prisma/prismaClient");
 const cloudinary = require("../config/cloudinaryConfig");
 
 async function test() {
-  console.log("test function");
+  const posts = await prisma.post.findMany();
+  console.log(posts);
 }
 
 test();
