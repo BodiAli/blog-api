@@ -73,6 +73,7 @@ exports.getPost = asyncHandler(async (req, res) => {
     res
       .status(404)
       .json({ error: "Post not found! it may have been moved, deleted or it might have never existed." });
+    return;
   }
 
   res.status(200).json(post);
