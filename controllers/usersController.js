@@ -69,6 +69,9 @@ const validateSignUp = [
       } else if (!req.file.mimeType.startsWith("image/")) {
         await fs.rm(req.file.path);
         throw new Error("File uploaded is not of type image.");
+      } else if (req.file.size === 0) {
+        await fs.rm(req.file.path);
+        throw new Error("File cannot be empty.");
       }
       return true;
     }),
@@ -159,7 +162,7 @@ exports.authenticateUser = [
 
       if (!user) {
         res.status(401).json({
-          msg: options.message,
+          error: options.message,
         });
         return;
       }
