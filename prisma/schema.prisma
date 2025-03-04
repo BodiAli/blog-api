@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  firstName String    @db.VarChar(255)
-  lastName  String    @db.VarChar(255)
-  email     String    @unique
-  password  String
-  Posts     Post[]
-  Comments  Comment[]
-  Profile   Profile   @relation(fields: [profileId], references: [id])
-  profileId Int       @unique
+  id           Int            @id @default(autoincrement())
+  firstName    String         @db.VarChar(255)
+  lastName     String         @db.VarChar(255)
+  email        String         @unique
+  password     String
+  Posts        Post[]
+  Comments     Comment[]
+  Profile      Profile        @relation(fields: [profileId], references: [id])
+  profileId    Int            @unique
+  LikesPosts   LikePosts[]
+  LikeComments LikeComments[]
 }
 
 model Profile {
@@ -27,28 +29,50 @@ model Profile {
 }
 
 model Post {
-  id        String    @id @default(uuid())
-  User      User      @relation(fields: [userId], references: [id])
-  userId    Int
-  Comments  Comment[]
-  title     String    @db.VarChar(255)
-  content   String
-  published Boolean   @default(false)
-  likes     Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  imgUrl    String?
-  cloudId   String?
+  id         String      @id @default(uuid())
+  User       User        @relation(fields: [userId], references: [id])
+  userId     Int
+  Comments   Comment[]
+  title      String      @db.VarChar(255)
+  content    String
+  published  Boolean     @default(false)
+  likes      Int         @default(0)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  imgUrl     String?
+  cloudId    String?
+  LikesPosts LikePosts[]
 }
 
 model Comment {
-  id        String   @id @default(uuid())
-  User      User     @relation(fields: [userId], references: [id])
+  id           String         @id @default(uuid())
+  User         User           @relation(fields: [userId], references: [id])
+  userId       Int
+  Post         Post           @relation(fields: [postId], references: [id])
+  postId       String
+  content      String
+  likes        Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  LikeComments LikeComments[]
+}
+
+model LikePosts {
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int
+  post   Post   @relation(fields: [postId], references: [id])
+  postId String
+
+  @@unique([userId, postId])
+}
+
+model LikeComments {
+  id        Int     @id @default(autoincrement())
+  user      User    @relation(fields: [userId], references: [id])
   userId    Int
-  Post      Post     @relation(fields: [postId], references: [id])
-  postId    String
-  content   String
-  likes     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  comment   Comment @relation(fields: [commentId], references: [id])
+  commentId String
+
+  @@unique([userId, commentId])
 }
