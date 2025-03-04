@@ -15,9 +15,13 @@ app.use("/users", usersRouter);
 app.use("/posts", postsRouter);
 app.use("/posts/:postId/comments", commentsRouter);
 
-app.use((err, req, res, _next) => {
-  console.error(err);
-  res.status(500).json({ err });
+app.use((req, res) => {
+  res.status(400).json({ error: "Resource not found" });
+});
+
+app.use((error, req, res, _next) => {
+  console.error(error);
+  res.status(500).json({ error });
 });
 
 const port = process.env.PORT || 3000;
