@@ -5,6 +5,7 @@ const postsRouter = Router();
 
 postsRouter.get("/", postsController.getPosts);
 postsRouter.post("/", postsController.createPost);
+postsRouter.patch("/:postId/like", postsController.updatePostLikes);
 
 postsRouter
   .route("/:postId")
