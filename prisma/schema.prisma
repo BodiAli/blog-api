@@ -34,6 +34,7 @@ model Post {
   title     String    @db.VarChar(255)
   content   String
   published Boolean   @default(false)
+  likes     Int       @default(0)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   imgUrl    String?
@@ -47,6 +48,7 @@ model Comment {
   Post      Post     @relation(fields: [postId], references: [id])
   postId    String
   content   String
+  likes     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
