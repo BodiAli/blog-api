@@ -6,13 +6,6 @@ const fs = require("node:fs/promises");
 const prisma = require("../prisma/prismaClient");
 const cloudinary = require("../config/cloudinaryConfig");
 
-async function test() {
-  // const posts = await prisma.post.findMany();
-  // console.log(posts);
-}
-
-test();
-
 const upload = multer({ dest: "uploads/" });
 
 exports.getPosts = asyncHandler(async (req, res) => {
@@ -268,7 +261,9 @@ exports.updatePostLikes = [
             id: postId,
           },
           data: {
-            likes: { decrement: 1 },
+            likes: {
+              decrement: 1,
+            },
           },
         }),
       ]);
@@ -290,7 +285,9 @@ exports.updatePostLikes = [
           id: postId,
         },
         data: {
-          likes: { increment: 1 },
+          likes: {
+            increment: 1,
+          },
         },
       }),
     ]);
