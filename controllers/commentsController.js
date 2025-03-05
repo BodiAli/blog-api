@@ -3,18 +3,7 @@ const { body, validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const prisma = require("../prisma/prismaClient");
 
-async function test() {
-  const posts = await prisma.post.findMany({
-    include: {
-      Comments: true,
-    },
-  });
-  console.dir(posts, { depth: null });
-}
-
-test();
-
-exports.getComments = asyncHandler(async (req, res) => {
+exports.getPostComments = asyncHandler(async (req, res) => {
   const { postId } = req.params;
   const post = await prisma.post.findUnique({
     where: {
@@ -153,5 +142,142 @@ exports.updateComment = [
     });
 
     res.status(200).json({ msg: "Comment updated successfully!" });
+  }),
+];
+
+exports.updateCommentLikes = [
+  passport.authenticate("jwt", { session: false }),
+  asyncHandler(async (req, res) => {
+    const { postId, commentId } = req.params;
+    const { id: userId } = req.user;
+
+    const [post, comment] = await Promise.all([
+      prisma.post.findUnique({
+        where: {
+          id: postId,
+        },
+      }),
+
+      prisma.comment.findUnique({
+        where: {
+          id: commentId,
+        },
+      }),
+    ]);
+
+    if (!post) {
+      res
+        .status(404)
+        .json({ error: "Post not found! it may have been moved, deleted or it might have never existed." });
+      return;
+    }
+
+    if (!comment) {
+      res.status(404).json({
+        error: "Comment not found! it may have been moved, deleted or it might have never existed.",
+      });
+      return;
+    }
+
+    const existingLike = await prisma.likeComments.findUnique({
+      where: {
+        userId_commentId: {
+          commentId,
+          userId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      await prisma.$transaction([
+        prisma.likeComments.delete({
+          where: {
+            userId_commentId: {
+              commentId,
+              userId,
+            },
+          },
+        }),
+        prisma.comment.update({
+          where: {
+            id: commentId,
+          },
+          data: {
+            likes: {
+              decrement: 1,
+            },
+          },
+        }),
+      ]);
+
+      res.sendStatus(204);
+
+      return;
+    }
+
+    await prisma.$transaction([
+      prisma.likeComments.create({
+        data: {
+          commentId,
+          userId,
+        },
+      }),
+      prisma.comment.update({
+        where: {
+          id: commentId,
+        },
+        data: {
+          likes: {
+            increment: 1,
+          },
+        },
+      }),
+    ]);
+
+    res.sendStatus(204);
+  }),
+];
+
+exports.deleteComment = [
+  passport.authenticate("jwt", { session: false }),
+
+  asyncHandler(async (req, res) => {
+    const { postId, commentId } = req.params;
+
+    const [post, comment] = await Promise.all([
+      prisma.post.findUnique({
+        where: {
+          id: postId,
+        },
+      }),
+
+      prisma.comment.findUnique({
+        where: {
+          id: commentId,
+        },
+      }),
+    ]);
+
+    if (!post) {
+      res
+        .status(404)
+        .json({ error: "Post not found! it may have been moved, deleted or it might have never existed." });
+      return;
+    }
+
+    if (!comment) {
+      res.status(404).json({
+        error: "Comment not found! it may have been moved, deleted or it might have never existed.",
+      });
+      return;
+    }
+
+    await prisma.comment.delete({
+      where: {
+        id: commentId,
+      },
+    });
+
+    res.sendStatus(204);
   }),
 ];
