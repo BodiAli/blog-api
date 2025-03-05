@@ -3,9 +3,14 @@ const commentsController = require("../controllers/commentsController");
 
 const commentsRouter = Router({ mergeParams: true });
 
-commentsRouter.get("/", commentsController.getComments);
+commentsRouter.get("/", commentsController.getPostComments);
 commentsRouter.post("/", commentsController.createComment);
 
-commentsRouter.route("/:commentId").put(commentsController.updateComment);
+commentsRouter.patch("/:commentId/like", commentsController.updateCommentLikes);
+
+commentsRouter
+  .route("/:commentId")
+  .put(commentsController.updateComment)
+  .delete(commentsController.deleteComment);
 
 module.exports = commentsRouter;
