@@ -272,6 +272,7 @@ exports.updatePostLikes = [
 
       return;
     }
+
     await prisma.$transaction([
       prisma.likePosts.create({
         data: {
