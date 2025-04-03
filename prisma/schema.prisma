@@ -42,6 +42,7 @@ model Post {
   imgUrl     String?
   cloudId    String?
   LikesPosts LikePosts[]
+  Topics     Topic[]
 }
 
 model Comment {
@@ -55,6 +56,12 @@ model Comment {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   LikeComments LikeComments[]
+}
+
+model Topic {
+  id    Int    @id @default(autoincrement())
+  name  String @unique @db.VarChar(100)
+  Posts Post[]
 }
 
 model LikePosts {
