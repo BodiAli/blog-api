@@ -143,6 +143,9 @@ const validatePost = [
       if (topics.some((topic) => topic.trim().length === 0)) {
         throw new Error("Topics cannot contain empty values.");
       }
+      if (topics.some((topic) => topic.trim().length > 100)) {
+        throw new Error("Topics cannot exceed 100 characters.");
+      }
 
       return true;
     }),
