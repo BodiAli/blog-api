@@ -1,6 +1,6 @@
 const passport = require("passport");
 const asyncHandler = require("express-async-handler");
-const { body, validationResult } = require("express-validator");
+const { body, validationResult, query } = require("express-validator");
 const multer = require("multer");
 const fs = require("node:fs/promises");
 const prisma = require("../prisma/prismaClient");
@@ -8,30 +8,70 @@ const cloudinary = require("../config/cloudinaryConfig");
 
 const upload = multer({ dest: "uploads/" });
 
-exports.getPosts = asyncHandler(async (req, res) => {
-  const posts = await prisma.post.findMany({
-    include: {
-      User: {
-        omit: {
-          email: true,
-          password: true,
-        },
-        include: {
-          Profile: {
-            select: {
-              profileImgUrl: true,
+const validatePageQuery = [
+  query("page").customSanitizer(async (value) => {
+    if (value <= 0 || Number.isNaN(Number.parseInt(value, 10))) {
+      return 1;
+    }
+
+    const totalPosts = await prisma.post.count();
+
+    const limit = 7;
+
+    const totalPages = Math.ceil(totalPosts / limit);
+
+    if (value > totalPages) {
+      return totalPages;
+    }
+
+    return value;
+  }),
+];
+
+exports.getPosts = [
+  validatePageQuery,
+  asyncHandler(async (req, res) => {
+    const page = Number.parseInt(req.query.page, 10) || 1;
+
+    const limit = 7;
+
+    const offset = (page - 1) * limit;
+
+    const postsCount = await prisma.post.count();
+
+    const pages = Math.ceil(postsCount / limit);
+
+    const posts = await prisma.post.findMany({
+      include: {
+        User: {
+          omit: {
+            email: true,
+            password: true,
+          },
+          include: {
+            Profile: {
+              select: {
+                profileImgUrl: true,
+              },
             },
           },
         },
+        Topics: {
+          select: {
+            name: true,
+          },
+        },
       },
-    },
-    orderBy: {
-      likes: "desc",
-    },
-  });
+      orderBy: {
+        likes: "desc",
+      },
+      take: limit,
+      skip: offset,
+    });
 
-  res.status(200).json(posts);
-});
+    res.status(200).json({ posts, pages });
+  }),
+];
 
 exports.getPost = asyncHandler(async (req, res) => {
   const { postId: id } = req.params;
@@ -57,6 +97,11 @@ exports.getPost = asyncHandler(async (req, res) => {
         take: 10,
         orderBy: {
           likes: "desc",
+        },
+      },
+      Topics: {
+        select: {
+          name: true,
         },
       },
     },
@@ -89,6 +134,18 @@ const validatePost = [
     .withMessage(`Content ${emptyErr}`)
     .isLength({ min: 5 })
     .withMessage(`Content ${minLengthErr}`),
+  body("topics")
+    .optional({ values: "falsy" })
+    .custom((topics) => {
+      if (!Array.isArray(topics)) {
+        throw new Error("Topics must be an array.");
+      }
+      if (topics.some((topic) => topic.trim().length === 0)) {
+        throw new Error("Topics cannot contain empty values.");
+      }
+
+      return true;
+    }),
   body("postImage")
     .optional({ values: "falsy" })
     .custom(async (value, { req }) => {
@@ -133,7 +190,20 @@ exports.createPost = [
       await fs.rm(req.file.path);
     }
 
-    const { title, content, published } = req.body;
+    const { title, content, published, topics } = req.body;
+
+    // topic.map(async) returns an array of promises which Promise.all awaits on then returns an array of the values
+    // from the upsert method which is an object containing the created or found topics.
+    const foundOrCreatedTopics = await Promise.all(
+      topics.map(async (topicName) =>
+        prisma.topic.upsert({
+          where: { name: topicName },
+          update: {},
+          create: { name: topicName },
+        })
+      )
+    );
+
     await prisma.post.create({
       data: {
         title,
@@ -142,6 +212,9 @@ exports.createPost = [
         cloudId,
         imgUrl,
         userId: req.user.id,
+        Topics: {
+          connect: foundOrCreatedTopics.map((topic) => ({ id: topic.id })),
+        },
       },
     });
 
