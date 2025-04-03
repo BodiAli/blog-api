@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 const postsRouter = require("./routes/postsRouter");
 const usersRouter = require("./routes/usersRouter");
 const commentsRouter = require("./routes/commentsRouter");
@@ -8,6 +9,7 @@ require("./config/passportConfig");
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
