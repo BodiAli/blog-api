@@ -29,20 +29,20 @@ model Profile {
 }
 
 model Post {
-  id         String      @id @default(uuid())
-  User       User        @relation(fields: [userId], references: [id])
+  id         String       @id @default(uuid())
+  User       User         @relation(fields: [userId], references: [id])
   userId     Int
   Comments   Comment[]
-  title      String      @db.VarChar(255)
+  title      String       @db.VarChar(255)
   content    String
-  published  Boolean     @default(false)
-  likes      Int         @default(0)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  published  Boolean      @default(false)
+  likes      Int          @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
   imgUrl     String?
   cloudId    String?
   LikesPosts LikePosts[]
-  Topics     Topic[]
+  TopicPosts TopicPosts[]
 }
 
 model Comment {
@@ -59,9 +59,19 @@ model Comment {
 }
 
 model Topic {
-  id    Int    @id @default(autoincrement())
-  name  String @unique @db.VarChar(100)
-  Posts Post[]
+  id         Int          @id @default(autoincrement())
+  name       String       @unique @db.VarChar(100)
+  TopicPosts TopicPosts[]
+}
+
+model TopicPosts {
+  id        Int    @id @default(autoincrement())
+  Post      Post   @relation(fields: [postId], references: [id])
+  postId    String
+  Topic     Topic  @relation(fields: [topicName], references: [name])
+  topicName String
+
+  @@unique([topicName, postId])
 }
 
 model LikePosts {
