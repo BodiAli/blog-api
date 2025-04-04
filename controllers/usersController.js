@@ -1,7 +1,7 @@
 const passport = require("passport");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
-const { body, validationResult } = require("express-validator");
+const { body, query, validationResult } = require("express-validator");
 const multer = require("multer");
 const fs = require("node:fs/promises");
 const prisma = require("../prisma/prismaClient");
@@ -169,5 +169,78 @@ exports.authenticateUser = [
       const token = issueJwt(user);
       res.status(200).json({ token: `Bearer ${token}` });
     })(req, res);
+  }),
+];
+
+const validatePageQuery = [
+  query("page").customSanitizer(async (value, { req }) => {
+    const userId = req.user.id;
+
+    if (value <= 0 || Number.isNaN(Number.parseInt(value, 10))) {
+      return 1;
+    }
+
+    const totalPosts = await prisma.post.count({
+      where: {
+        userId,
+      },
+    });
+
+    const limit = 7;
+
+    const totalPages = Math.ceil(totalPosts / limit);
+
+    if (value > totalPages) {
+      return totalPages;
+    }
+
+    return value;
+  }),
+];
+
+exports.getUser = [
+  passport.authenticate("jwt", { session: false }),
+  validatePageQuery,
+  asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+
+    const page = Number.parseInt(req.query.page, 10) || 1;
+
+    const limit = 7;
+
+    const offset = (page - 1) * limit;
+
+    const postsCount = await prisma.post.count();
+
+    const pages = Math.ceil(postsCount / limit);
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+
+      include: {
+        Posts: {
+          take: limit,
+          skip: offset,
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+        Profile: {
+          select: {
+            profileImgUrl: true,
+          },
+        },
+      },
+
+      omit: {
+        email: true,
+        password: true,
+        profileId: true,
+      },
+    });
+
+    res.status(200).json({ user, pages });
   }),
 ];
