@@ -56,9 +56,11 @@ exports.getPosts = [
             },
           },
         },
-        Topics: {
+        TopicPosts: {
           select: {
-            name: true,
+            Topic: {
+              select: { name: true },
+            },
           },
         },
       },
@@ -99,9 +101,11 @@ exports.getPost = asyncHandler(async (req, res) => {
           likes: "desc",
         },
       },
-      Topics: {
+      TopicPosts: {
         select: {
-          name: true,
+          Topic: {
+            select: { name: true },
+          },
         },
       },
     },
@@ -139,6 +143,9 @@ const validatePost = [
     .custom((topics) => {
       if (!Array.isArray(topics)) {
         throw new Error("Topics must be an array.");
+      }
+      if (topics.every((topic) => typeof topic !== "string")) {
+        throw new Error("Topics must be of type string.");
       }
       if (topics.some((topic) => topic.trim().length === 0)) {
         throw new Error("Topics cannot contain empty values.");
@@ -195,17 +202,21 @@ exports.createPost = [
 
     const { title, content, published, topics } = req.body;
 
-    // topic.map(async) returns an array of promises which Promise.all awaits on then returns an array of the values
-    // from the upsert method which is an object containing the created or found topics.
-    const foundOrCreatedTopics = await Promise.all(
-      topics.map(async (topicName) =>
-        prisma.topic.upsert({
-          where: { name: topicName },
-          update: {},
-          create: { name: topicName },
-        })
-      )
-    );
+    let foundOrCreatedTopics = [];
+
+    if (topics) {
+      // topic.map(async) returns an array of promises which Promise.all awaits on then returns an array of the values
+      // from the upsert method which is an object containing the created or found topics.
+      foundOrCreatedTopics = await Promise.all(
+        topics.map(async (topicName) =>
+          prisma.topic.upsert({
+            where: { name: topicName },
+            update: {},
+            create: { name: topicName },
+          })
+        )
+      );
+    }
 
     await prisma.post.create({
       data: {
@@ -215,8 +226,10 @@ exports.createPost = [
         cloudId,
         imgUrl,
         userId: req.user.id,
-        Topics: {
-          connect: foundOrCreatedTopics.map((topic) => ({ id: topic.id })),
+        TopicPosts: {
+          createMany: {
+            data: foundOrCreatedTopics.map((topic) => ({ topicName: topic.name })),
+          },
         },
       },
     });
@@ -274,20 +287,56 @@ exports.updatePost = [
       await fs.rm(req.file.path);
     }
 
-    const { title, content, published } = req.body;
+    const { title, content, published, topics } = req.body;
 
-    await prisma.post.update({
-      where: {
-        id,
-      },
-      data: {
-        title,
-        content,
-        published,
-        cloudId,
-        imgUrl,
-      },
-    });
+    let foundOrCreatedTopics = [];
+    if (topics) {
+      foundOrCreatedTopics = await Promise.all(
+        topics.map(async (topicName) =>
+          prisma.topic.upsert({
+            where: { name: topicName },
+            update: {},
+            create: { name: topicName },
+          })
+        )
+      );
+    }
+
+    await prisma.$transaction([
+      prisma.topicPosts.deleteMany({
+        where: {
+          postId: id,
+        },
+      }),
+
+      prisma.post.update({
+        where: {
+          id,
+        },
+        data: {
+          title,
+          content,
+          published,
+          cloudId,
+          imgUrl,
+          TopicPosts: {
+            createMany: {
+              data: foundOrCreatedTopics.map((topic) => ({
+                topicName: topic.name,
+              })),
+            },
+          },
+        },
+      }),
+
+      prisma.topic.deleteMany({
+        where: {
+          TopicPosts: {
+            none: {},
+          },
+        },
+      }),
+    ]);
 
     res.status(200).json({ msg: "Post updated successfully!" });
   }),
