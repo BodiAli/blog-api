@@ -210,9 +210,13 @@ exports.getUser = [
 
     const offset = (page - 1) * limit;
 
-    const postsCount = await prisma.post.count();
+    const postsCount = await prisma.post.count({
+      where: {
+        userId,
+      },
+    });
 
-    const pages = Math.ceil(postsCount / limit);
+    const pages = Math.ceil(postsCount / limit) || 1;
 
     const user = await prisma.user.findUnique({
       where: {
