@@ -190,3 +190,5 @@ exports.authenticateUser = [
     })(req, res);
   },
 ];
+
+// exports.validateToken =
