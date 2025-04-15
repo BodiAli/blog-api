@@ -1,5 +1,4 @@
 const passport = require("passport");
-const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const { body, validationResult } = require("express-validator");
 const multer = require("multer");
@@ -80,7 +79,7 @@ const validateSignUp = [
 exports.createUser = [
   upload.single("userImage"),
   validateSignUp,
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -136,7 +135,7 @@ exports.createUser = [
     const token = issueJwt(user);
 
     res.status(201).json({ token: `Bearer ${token}`, user });
-  }),
+  },
 ];
 
 const validateLogin = [
@@ -158,7 +157,7 @@ const validateLogin = [
 
 exports.authenticateUser = [
   validateLogin,
-  asyncHandler(async (req, res, next) => {
+  async (req, res, next) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -189,5 +188,5 @@ exports.authenticateUser = [
         },
       });
     })(req, res);
-  }),
+  },
 ];

@@ -1,5 +1,4 @@
 const passport = require("passport");
-const asyncHandler = require("express-async-handler");
 const { body, validationResult, query } = require("express-validator");
 const multer = require("multer");
 const fs = require("node:fs/promises");
@@ -30,7 +29,7 @@ const validatePageQuery = [
 
 exports.getPosts = [
   validatePageQuery,
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const page = Number.parseInt(req.query.page, 10) || 1;
 
     const limit = 7;
@@ -72,10 +71,10 @@ exports.getPosts = [
     });
 
     res.status(200).json({ posts, pages });
-  }),
+  },
 ];
 
-exports.getPost = asyncHandler(async (req, res) => {
+exports.getPost = async (req, res) => {
   const { postId: id } = req.params;
   const post = await prisma.post.findUnique({
     where: {
@@ -119,7 +118,7 @@ exports.getPost = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(post);
-});
+};
 
 const emptyErr = "can not be empty.";
 const maxLengthErr = "can not exceed 255 characters.";
@@ -179,7 +178,7 @@ exports.createPost = [
   passport.authenticate("jwt", { session: false }),
   upload.single("postImage"),
   validatePost,
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
@@ -235,14 +234,14 @@ exports.createPost = [
     });
 
     res.status(201).json({ msg: "Post created successfully!" });
-  }),
+  },
 ];
 
 exports.updatePost = [
   passport.authenticate("jwt", { session: false }),
   upload.single("postImage"),
   validatePost,
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
@@ -339,12 +338,12 @@ exports.updatePost = [
     ]);
 
     res.status(200).json({ msg: "Post updated successfully!" });
-  }),
+  },
 ];
 
 exports.updatePostLikes = [
   passport.authenticate("jwt", { session: false }),
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const { postId } = req.params;
     const { id: userId } = req.user;
 
@@ -419,12 +418,12 @@ exports.updatePostLikes = [
     ]);
 
     res.sendStatus(204);
-  }),
+  },
 ];
 
 exports.deletePost = [
   passport.authenticate("jwt", { session: false }),
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const { postId: id } = req.params;
 
     const post = await prisma.post.findUnique({
@@ -458,5 +457,5 @@ exports.deletePost = [
     });
 
     res.sendStatus(204);
-  }),
+  },
 ];

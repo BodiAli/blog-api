@@ -1,9 +1,8 @@
 const passport = require("passport");
 const { body, validationResult } = require("express-validator");
-const asyncHandler = require("express-async-handler");
 const prisma = require("../prisma/prismaClient");
 
-exports.getPostComments = asyncHandler(async (req, res) => {
+exports.getPostComments = async (req, res) => {
   const { postId } = req.params;
   const post = await prisma.post.findUnique({
     where: {
@@ -43,7 +42,7 @@ exports.getPostComments = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json(comments);
-});
+};
 
 const emptyErr = "can not be empty.";
 
@@ -52,7 +51,7 @@ const validateComment = [body("content").trim().notEmpty().withMessage(`Comment 
 exports.createComment = [
   passport.authenticate("jwt", { session: false }),
   validateComment,
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const { postId } = req.params;
     const post = await prisma.post.findUnique({
       where: {
@@ -85,13 +84,13 @@ exports.createComment = [
     });
 
     res.status(201).json({ msg: "Comment created successfully!" });
-  }),
+  },
 ];
 
 exports.updateComment = [
   passport.authenticate("jwt", { session: false }),
   validateComment,
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const { postId, commentId } = req.params;
 
     const [post, comment] = await Promise.all([
@@ -142,12 +141,12 @@ exports.updateComment = [
     });
 
     res.status(200).json({ msg: "Comment updated successfully!" });
-  }),
+  },
 ];
 
 exports.updateCommentLikes = [
   passport.authenticate("jwt", { session: false }),
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const { postId, commentId } = req.params;
     const { id: userId } = req.user;
 
@@ -235,13 +234,13 @@ exports.updateCommentLikes = [
     ]);
 
     res.sendStatus(204);
-  }),
+  },
 ];
 
 exports.deleteComment = [
   passport.authenticate("jwt", { session: false }),
 
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const { postId, commentId } = req.params;
 
     const [post, comment] = await Promise.all([
@@ -279,5 +278,5 @@ exports.deleteComment = [
     });
 
     res.sendStatus(204);
-  }),
+  },
 ];

@@ -1,5 +1,4 @@
 const passport = require("passport");
-const asyncHandler = require("express-async-handler");
 const { query } = require("express-validator");
 const prisma = require("../prisma/prismaClient");
 
@@ -32,7 +31,7 @@ const validatePageQuery = [
 exports.getUserPosts = [
   passport.authenticate("jwt", { session: false }),
   validatePageQuery,
-  asyncHandler(async (req, res) => {
+  async (req, res) => {
     const userId = req.user.id;
 
     const page = Number.parseInt(req.query.page, 10) || 1;
@@ -60,5 +59,5 @@ exports.getUserPosts = [
       },
     });
     res.status(200).json({ posts, pages });
-  }),
+  },
 ];
