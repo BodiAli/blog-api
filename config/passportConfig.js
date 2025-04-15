@@ -11,6 +11,13 @@ passport.use(
         where: {
           email,
         },
+        include: {
+          Profile: {
+            select: {
+              profileImgUrl: true,
+            },
+          },
+        },
       });
 
       if (!user) {
@@ -43,6 +50,13 @@ passport.use(
         const user = await prisma.user.findUnique({
           where: {
             id: payload.sub,
+          },
+          include: {
+            Profile: {
+              select: {
+                profileImgUrl: true,
+              },
+            },
           },
         });
 
