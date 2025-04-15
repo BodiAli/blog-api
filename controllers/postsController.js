@@ -206,7 +206,7 @@ exports.createPost = [
 
     if (topics) {
       // topic.map(async) returns an array of promises which Promise.all awaits on then returns an array of the values
-      // from the upsert method which is an object containing the created or found topics.
+      // from the upsert method which is an object containing the created or found topic.
       foundOrCreatedTopics = await Promise.all(
         topics.map(async (topicName) =>
           prisma.topic.upsert({
