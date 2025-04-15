@@ -35,7 +35,7 @@ model Post {
   Comments   Comment[]
   title      String       @db.VarChar(255)
   content    String
-  published  Boolean      @default(false)
+  published  Boolean      @default(true)
   likes      Int          @default(0)
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
