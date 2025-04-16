@@ -118,23 +118,11 @@ exports.createUser = [
           },
         },
       },
-      include: {
-        Profile: {
-          select: {
-            profileImgUrl: true,
-          },
-        },
-      },
-      omit: {
-        password: true,
-        email: true,
-        profileId: true,
-      },
     });
 
     const token = issueJwt(user);
 
-    res.status(201).json({ token: `Bearer ${token}`, user });
+    res.status(201).json({ token: `Bearer ${token}` });
   },
 ];
 
@@ -178,17 +166,21 @@ exports.authenticateUser = [
         return;
       }
       const token = issueJwt(user);
-      res.status(200).json({
-        token: `Bearer ${token}`,
-        user: {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          Profile: { profileImgUrl: user.Profile.profileImgUrl },
-        },
-      });
+      res.status(200).json({ token: `Bearer ${token}` });
     })(req, res);
   },
 ];
 
-// exports.validateToken =
+exports.validateToken = [
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    res.status(200).json({
+      user: {
+        id: req.user.id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        Profile: { profileImgUrl: req.user.Profile.profileImgUrl },
+      },
+    });
+  },
+];
