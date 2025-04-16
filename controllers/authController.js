@@ -175,12 +175,10 @@ exports.validateToken = [
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     res.status(200).json({
-      user: {
         id: req.user.id,
         firstName: req.user.firstName,
         lastName: req.user.lastName,
         Profile: { profileImgUrl: req.user.Profile.profileImgUrl },
-      },
     });
   },
 ];
