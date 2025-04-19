@@ -135,9 +135,15 @@ const validatePost = [
     .withMessage(`Content ${minLengthErr}`),
   body("topics")
     .optional({ values: "falsy" })
+    .customSanitizer((topics) => {
+      if (typeof topics === "string") {
+        return [topics];
+      }
+      return topics;
+    })
     .custom((topics) => {
       if (!Array.isArray(topics)) {
-        throw new Error("Topics must be an array.");
+        throw new Error("Topics must be an array or a string.");
       }
       if (topics.every((topic) => typeof topic !== "string")) {
         throw new Error("Topics must be of type string.");
@@ -206,14 +212,16 @@ exports.createPost = [
         imgUrl,
         userId: req.user.id,
         Topics: {
-          connectOrCreate: topics.map((topic) => ({
-            create: {
-              name: topic,
-            },
-            where: {
-              name: topic,
-            },
-          })),
+          connectOrCreate: topics
+            ? topics.map((topic) => ({
+                create: {
+                  name: topic,
+                },
+                where: {
+                  name: topic,
+                },
+              }))
+            : [],
         },
       },
     });
@@ -286,14 +294,16 @@ exports.updatePost = [
           imgUrl,
           Topics: {
             set: [],
-            connectOrCreate: topics.map((topic) => ({
-              create: {
-                name: topic,
-              },
-              where: {
-                name: topic,
-              },
-            })),
+            connectOrCreate: topics
+              ? topics.map((topic) => ({
+                  create: {
+                    name: topic,
+                  },
+                  where: {
+                    name: topic,
+                  },
+                }))
+              : [],
           },
         },
       }),
