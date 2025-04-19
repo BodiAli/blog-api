@@ -221,7 +221,7 @@ exports.createPost = [
       data: {
         title,
         content,
-        published,
+        published: Boolean(published),
         cloudId,
         imgUrl,
         userId: req.user.id,
