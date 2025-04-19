@@ -55,11 +55,9 @@ exports.getPosts = [
             },
           },
         },
-        TopicPosts: {
+        Topics: {
           select: {
-            Topic: {
-              select: { name: true },
-            },
+            name: true,
           },
         },
       },
@@ -100,11 +98,9 @@ exports.getPost = async (req, res) => {
           likes: "desc",
         },
       },
-      TopicPosts: {
+      Topics: {
         select: {
-          Topic: {
-            select: { name: true },
-          },
+          name: true,
         },
       },
     },
@@ -201,22 +197,6 @@ exports.createPost = [
 
     const { title, content, published, topics } = req.body;
 
-    let foundOrCreatedTopics = [];
-
-    if (topics) {
-      // topic.map(async) returns an array of promises which Promise.all awaits on then returns an array of the values
-      // from the upsert method which is an object containing the created or found topic.
-      foundOrCreatedTopics = await Promise.all(
-        topics.map(async (topicName) =>
-          prisma.topic.upsert({
-            where: { name: topicName },
-            update: {},
-            create: { name: topicName },
-          })
-        )
-      );
-    }
-
     await prisma.post.create({
       data: {
         title,
@@ -225,10 +205,15 @@ exports.createPost = [
         cloudId,
         imgUrl,
         userId: req.user.id,
-        TopicPosts: {
-          createMany: {
-            data: foundOrCreatedTopics.map((topic) => ({ topicName: topic.name })),
-          },
+        Topics: {
+          connectOrCreate: topics.map((topic) => ({
+            create: {
+              name: topic,
+            },
+            where: {
+              name: topic,
+            },
+          })),
         },
       },
     });
@@ -288,26 +273,7 @@ exports.updatePost = [
 
     const { title, content, published, topics } = req.body;
 
-    let foundOrCreatedTopics = [];
-    if (topics) {
-      foundOrCreatedTopics = await Promise.all(
-        topics.map(async (topicName) =>
-          prisma.topic.upsert({
-            where: { name: topicName },
-            update: {},
-            create: { name: topicName },
-          })
-        )
-      );
-    }
-
     await prisma.$transaction([
-      prisma.topicPosts.deleteMany({
-        where: {
-          postId: id,
-        },
-      }),
-
       prisma.post.update({
         where: {
           id,
@@ -318,19 +284,23 @@ exports.updatePost = [
           published,
           cloudId,
           imgUrl,
-          TopicPosts: {
-            createMany: {
-              data: foundOrCreatedTopics.map((topic) => ({
-                topicName: topic.name,
-              })),
-            },
+          Topics: {
+            set: [],
+            connectOrCreate: topics.map((topic) => ({
+              create: {
+                name: topic,
+              },
+              where: {
+                name: topic,
+              },
+            })),
           },
         },
       }),
 
       prisma.topic.deleteMany({
         where: {
-          TopicPosts: {
+          Posts: {
             none: {},
           },
         },
