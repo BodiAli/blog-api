@@ -1,5 +1,5 @@
 const passport = require("passport");
-const { query } = require("express-validator");
+const { query, matchedData } = require("express-validator");
 const prisma = require("../prisma/prismaClient");
 
 const validatePageQuery = [
@@ -34,7 +34,9 @@ exports.getUserPosts = [
   async (req, res) => {
     const userId = req.user.id;
 
-    const page = Number.parseInt(req.query.page, 10) || 1;
+    const { page: sanitizedPage } = matchedData(req, { locations: ["query"] });
+
+    const page = Number.parseInt(sanitizedPage, 10);
 
     const limit = 7;
 
