@@ -1,5 +1,5 @@
 const passport = require("passport");
-const { body, validationResult, query } = require("express-validator");
+const { body, validationResult, query, matchedData } = require("express-validator");
 const multer = require("multer");
 const fs = require("node:fs/promises");
 const prisma = require("../prisma/prismaClient");
@@ -30,7 +30,8 @@ const validatePageQuery = [
 exports.getPosts = [
   validatePageQuery,
   async (req, res) => {
-    const page = Number.parseInt(req.query.page, 10) || 1;
+    const { page: sanitizedPage } = matchedData(req, { locations: ["query"] });
+    const page = Number.parseInt(sanitizedPage, 10);
 
     const limit = 7;
 
