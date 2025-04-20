@@ -52,6 +52,12 @@ exports.getUserPosts = [
       where: {
         userId,
       },
+      include: {
+        Topics: true,
+      },
+      omit: {
+        cloudId: true,
+      },
       take: limit,
       skip: offset,
       orderBy: {
