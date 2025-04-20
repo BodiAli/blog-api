@@ -9,7 +9,9 @@ const upload = multer({ dest: "uploads/" });
 
 const validatePageQuery = [
   query("page").customSanitizer(async (value) => {
-    if (value <= 0 || Number.isNaN(Number.parseInt(value, 10))) {
+    const valueInt = Number.parseInt(value, 10);
+
+    if (valueInt <= 0 || Number.isNaN(Number.parseInt(valueInt, 10))) {
       return 1;
     }
 
@@ -19,11 +21,11 @@ const validatePageQuery = [
 
     const totalPages = Math.ceil(totalPosts / limit);
 
-    if (value > totalPages) {
+    if (valueInt > totalPages) {
       return totalPages;
     }
 
-    return value;
+    return valueInt;
   }),
 ];
 
