@@ -7,6 +7,7 @@ postsRouter.get("/", postsController.getPosts);
 postsRouter.post("/", postsController.createPost);
 
 postsRouter.patch("/:postId/like", postsController.updatePostLikes);
+postsRouter.patch("/:postId/publish", postsController.updatePostPublish);
 
 postsRouter
   .route("/:postId")
