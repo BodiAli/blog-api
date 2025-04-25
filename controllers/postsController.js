@@ -282,7 +282,7 @@ exports.updatePost = [
       await fs.rm(req.file.path);
     }
 
-    const { title, content, published, topics } = req.body;
+    const { title, content, topics } = req.body;
 
     await prisma.$transaction([
       prisma.post.update({
@@ -292,7 +292,6 @@ exports.updatePost = [
         data: {
           title,
           content,
-          published,
           cloudId,
           imgUrl,
           Topics: {
@@ -321,6 +320,34 @@ exports.updatePost = [
     ]);
 
     res.status(200).json({ msg: "Post updated successfully!" });
+  },
+];
+
+exports.updatePostPublish = [
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    const { id: userId } = req.user;
+    const { postId } = req.params;
+
+    const { published } = req.body;
+
+    const post = await prisma.post.update({
+      data: {
+        published,
+      },
+      include: {
+        Topics: true,
+      },
+      omit: {
+        cloudId: true,
+      },
+      where: {
+        id: postId,
+        userId,
+      },
+    });
+
+    res.status(200).json({ msg: "Post updated successfully!", post });
   },
 ];
 
