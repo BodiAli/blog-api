@@ -20,7 +20,7 @@ const validatePageQuery = [
 
     const limit = 7;
 
-    const totalPages = Math.ceil(totalPosts / limit);
+    const totalPages = Math.ceil(totalPosts / limit) || 1;
 
     if (valueInt > totalPages) {
       return totalPages;
