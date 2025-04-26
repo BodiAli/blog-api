@@ -41,7 +41,7 @@ exports.getPosts = [
 
     const postsCount = await prisma.post.count();
 
-    const pages = Math.ceil(postsCount / limit);
+    const pages = Math.ceil(postsCount / limit) || 1;
 
     const posts = await prisma.post.findMany({
       include: {
