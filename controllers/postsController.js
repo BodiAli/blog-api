@@ -244,11 +244,13 @@ exports.updatePost = [
       return;
     }
 
+    const { id: userId } = req.user;
     const { postId: id } = req.params;
 
     const post = await prisma.post.findUnique({
       where: {
         id,
+        userId,
       },
     });
 
@@ -288,6 +290,7 @@ exports.updatePost = [
       prisma.post.update({
         where: {
           id,
+          userId,
         },
         data: {
           title,
@@ -330,6 +333,20 @@ exports.updatePostPublish = [
     const { postId } = req.params;
 
     const { published } = req.body;
+
+    const findPost = await prisma.post.findUnique({
+      where: {
+        id: postId,
+        userId,
+      },
+    });
+
+    if (!findPost) {
+      res
+        .status(404)
+        .json({ error: "Post not found! it may have been moved, deleted or it might have never existed." });
+      return;
+    }
 
     const post = await prisma.post.update({
       data: {
@@ -434,11 +451,13 @@ exports.updatePostLikes = [
 exports.deletePost = [
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
+    const { id: userId } = req.user;
     const { postId: id } = req.params;
 
     const post = await prisma.post.findUnique({
       where: {
         id,
+        userId,
       },
     });
 
@@ -463,6 +482,7 @@ exports.deletePost = [
     await prisma.post.delete({
       where: {
         id,
+        userId,
       },
     });
 
