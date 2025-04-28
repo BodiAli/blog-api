@@ -469,10 +469,7 @@ exports.deletePost = [
     }
 
     if (post.imgUrl) {
-      const koko = await cloudinary.uploader.destroy(post.cloudId, { resource_type: "image" });
-      console.log(koko);
-
-      const { result } = koko;
+      const { result } = await cloudinary.uploader.destroy(post.cloudId, { resource_type: "image" });
 
       if (result !== "ok") {
         throw new Error("Error deleting post, please try again later.");
