@@ -261,8 +261,8 @@ exports.updatePost = [
       return;
     }
 
-    let cloudId = null;
-    let imgUrl = null;
+    let { cloudId } = post;
+    let { imgUrl } = post;
 
     if (req.file) {
       if (post.imgUrl) {
