@@ -65,7 +65,7 @@ exports.getUserPosts = [
       take: limit,
       skip: offset,
       orderBy: {
-        createdAt: "asc",
+        createdAt: "desc",
       },
     });
     res.status(200).json({ posts, pages });
