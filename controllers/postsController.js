@@ -27,25 +27,54 @@ const validatePageQuery = [
 
     return valueInt;
   }),
+  query("topic").customSanitizer(async (value) => {
+    if (typeof value !== "string") {
+      return "";
+    }
+    return value;
+  }),
 ];
 
 exports.getPosts = [
   validatePageQuery,
   async (req, res) => {
-    const { page: sanitizedPage } = matchedData(req, { locations: ["query"] });
+    const { page: sanitizedPage, topic: sanitizedTopic } = matchedData(req, { locations: ["query"] });
     const page = Number.parseInt(sanitizedPage, 10);
 
     const limit = 7;
 
     const offset = (page - 1) * limit;
 
-    const postsCount = await prisma.post.count();
+    const postsCount = await prisma.post.count({
+      where: {
+        Topics: sanitizedTopic
+          ? {
+              some: {
+                name: {
+                  contains: sanitizedTopic,
+                  mode: "insensitive",
+                },
+              },
+            }
+          : {},
+      },
+    });
 
     const pages = Math.ceil(postsCount / limit) || 1;
 
     const posts = await prisma.post.findMany({
       where: {
         published: true,
+        Topics: sanitizedTopic
+          ? {
+              some: {
+                name: {
+                  contains: sanitizedTopic,
+                  mode: "insensitive",
+                },
+              },
+            }
+          : {},
       },
       include: {
         User: {
