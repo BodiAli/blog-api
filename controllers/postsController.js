@@ -8,18 +8,39 @@ const cloudinary = require("../config/cloudinaryConfig");
 const upload = multer({ dest: "uploads/" });
 
 const validatePageQuery = [
-  query("page").customSanitizer(async (value) => {
+  query("topic").customSanitizer(async (value) => {
+    if (typeof value !== "string") {
+      return "";
+    }
+    return value;
+  }),
+  query("page").customSanitizer(async (value, { req }) => {
     const valueInt = Number.parseInt(value, 10);
 
     if (valueInt <= 0 || Number.isNaN(Number.parseInt(valueInt, 10))) {
       return 1;
     }
 
-    const totalPosts = await prisma.post.count();
+    const { topic: sanitizedTopic } = matchedData(req, { locations: ["query"] });
+
+    const totalPosts = await prisma.post.count({
+      where: {
+        Topics: sanitizedTopic
+          ? {
+              some: {
+                name: {
+                  contains: sanitizedTopic,
+                  mode: "insensitive",
+                },
+              },
+            }
+          : {},
+      },
+    });
 
     const limit = 7;
 
-    const totalPages = Math.ceil(totalPosts / limit);
+    const totalPages = Math.ceil(totalPosts / limit) || 1;
 
     if (valueInt > totalPages) {
       return totalPages;
@@ -27,19 +48,12 @@ const validatePageQuery = [
 
     return valueInt;
   }),
-  query("topic").customSanitizer(async (value) => {
-    if (typeof value !== "string") {
-      return "";
-    }
-    return value;
-  }),
 ];
 
 exports.getPosts = [
   validatePageQuery,
   async (req, res) => {
-    const { page: sanitizedPage, topic: sanitizedTopic } = matchedData(req, { locations: ["query"] });
-    const page = Number.parseInt(sanitizedPage, 10);
+    const { page, topic: sanitizedTopic } = matchedData(req, { locations: ["query"] });
 
     const limit = 7;
 
@@ -96,9 +110,14 @@ exports.getPosts = [
           },
         },
       },
-      orderBy: {
-        likes: "desc",
-      },
+      orderBy: [
+        {
+          likes: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
       take: limit,
       skip: offset,
     });
