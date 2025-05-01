@@ -44,6 +44,9 @@ exports.getPosts = [
     const pages = Math.ceil(postsCount / limit) || 1;
 
     const posts = await prisma.post.findMany({
+      where: {
+        published: true,
+      },
       include: {
         User: {
           omit: {
