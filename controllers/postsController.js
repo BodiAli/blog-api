@@ -51,8 +51,30 @@ const validatePageQuery = [
 ];
 
 exports.getPosts = [
+  (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      next();
+      return;
+    }
+
+    passport.authenticate("jwt", { session: false }, (err, user) => {
+      if (err) {
+        next(err);
+        return;
+      }
+
+      if (user) {
+        req.login(user, { session: false });
+      }
+
+      next();
+    })(req, res);
+  },
   validatePageQuery,
   async (req, res) => {
+    const userId = req.user?.id;
+
     const { page, topic: sanitizedTopic } = matchedData(req, { locations: ["query"] });
 
     const limit = 7;
@@ -109,6 +131,16 @@ exports.getPosts = [
             name: true,
           },
         },
+        ...(userId && {
+          LikesPosts: {
+            where: {
+              userId,
+            },
+            select: {
+              id: true,
+            },
+          },
+        }),
       },
       orderBy: [
         {
@@ -125,7 +157,12 @@ exports.getPosts = [
       },
     });
 
-    res.status(200).json({ posts, pages });
+    const formattedPosts = posts.map(({ LikesPosts, ...post }) => ({
+      ...post,
+      liked: LikesPosts ? LikesPosts.length > 0 : false,
+    }));
+
+    res.status(200).json({ posts: formattedPosts, pages });
   },
 ];
 
