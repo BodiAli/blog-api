@@ -161,6 +161,9 @@ exports.getPost = async (req, res) => {
         },
       },
     },
+    omit: {
+      cloudId: true,
+    },
   });
 
   if (!post) {
