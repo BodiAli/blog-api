@@ -120,6 +120,9 @@ exports.getPosts = [
       ],
       take: limit,
       skip: offset,
+      omit: {
+        cloudId: true,
+      },
     });
 
     res.status(200).json({ posts, pages });
