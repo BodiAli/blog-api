@@ -166,52 +166,129 @@ exports.getPosts = [
   },
 ];
 
-exports.getPost = async (req, res) => {
-  const { postId: id } = req.params;
-  const post = await prisma.post.findUnique({
-    where: {
-      id,
-    },
-    include: {
-      User: {
-        omit: {
-          email: true,
-          password: true,
-        },
-        include: {
-          Profile: {
-            select: {
-              profileImgUrl: true,
+exports.getPost = [
+  (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      next();
+      return;
+    }
+
+    passport.authenticate("jwt", { session: false }, (err, user) => {
+      if (err) {
+        next(err);
+        return;
+      }
+
+      if (user) {
+        req.login(user, { session: false });
+      }
+
+      next();
+    })(req, res);
+  },
+  async (req, res) => {
+    const userId = req.user?.id;
+    const { postId: id } = req.params;
+
+    const post = await prisma.post.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        User: {
+          omit: {
+            email: true,
+            password: true,
+            profileId: true,
+          },
+          include: {
+            Profile: {
+              select: {
+                profileImgUrl: true,
+              },
             },
           },
         },
-      },
-      Comments: {
-        take: 10,
-        orderBy: {
-          likes: "desc",
+        Comments: {
+          include: {
+            User: {
+              include: {
+                Profile: {
+                  select: {
+                    profileImgUrl: true,
+                  },
+                },
+              },
+              omit: {
+                email: true,
+                password: true,
+                profileId: true,
+              },
+            },
+            ...(userId && {
+              LikesComments: {
+                where: {
+                  userId,
+                },
+                select: {
+                  id: true,
+                },
+              },
+            }),
+          },
+          orderBy: [
+            {
+              likes: "desc",
+            },
+            {
+              createdAt: "desc",
+            },
+          ],
         },
-      },
-      Topics: {
-        select: {
-          name: true,
+        Topics: {
+          select: {
+            name: true,
+          },
         },
+        ...(userId && {
+          LikesPosts: {
+            where: {
+              userId,
+            },
+            select: {
+              id: true,
+            },
+          },
+        }),
       },
-    },
-    omit: {
-      cloudId: true,
-    },
-  });
+      omit: {
+        cloudId: true,
+      },
+    });
 
-  if (!post) {
-    res
-      .status(404)
-      .json({ error: "Post not found! it may have been moved, deleted or it might have never existed." });
-    return;
-  }
+    if (!post) {
+      res
+        .status(404)
+        .json({ error: "Post not found! it may have been moved, deleted or it might have never existed." });
+      return;
+    }
 
-  res.status(200).json(post);
-};
+    const formattedPost = {
+      ...post,
+      postLiked: post.LikesPosts ? post.LikesPosts.length > 0 : false,
+
+      Comments: post.Comments.map(({ LikesComments, ...comment }) => ({
+        ...comment,
+        commentLiked: LikesComments ? LikesComments.length > 0 : false,
+      })),
+    };
+
+    delete formattedPost.LikesPosts;
+
+    res.status(200).json(formattedPost);
+  },
+];
 
 const emptyErr = "can not be empty.";
 const maxLengthErr = "can not exceed 255 characters.";
