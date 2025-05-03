@@ -2,48 +2,6 @@ const passport = require("passport");
 const { body, validationResult } = require("express-validator");
 const prisma = require("../prisma/prismaClient");
 
-exports.getPostComments = async (req, res) => {
-  const { postId } = req.params;
-  const post = await prisma.post.findUnique({
-    where: {
-      id: postId,
-    },
-  });
-
-  if (!post) {
-    res
-      .status(404)
-      .json({ error: "Post not found! it may have been moved, deleted or it might have never existed." });
-    return;
-  }
-
-  const comments = await prisma.comment.findMany({
-    where: {
-      postId,
-    },
-    include: {
-      User: {
-        omit: {
-          email: true,
-          password: true,
-        },
-        include: {
-          Profile: {
-            select: {
-              profileImgUrl: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      likes: "desc",
-    },
-  });
-
-  res.status(200).json(comments);
-};
-
 const emptyErr = "can not be empty.";
 
 const validateComment = [body("content").trim().notEmpty().withMessage(`Comment ${emptyErr}`)];
