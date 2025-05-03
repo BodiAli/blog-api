@@ -8,17 +8,17 @@ datasource db {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  firstName    String         @db.VarChar(255)
-  lastName     String         @db.VarChar(255)
-  email        String         @unique
-  password     String
-  Posts        Post[]
-  Comments     Comment[]
-  Profile      Profile        @relation(fields: [profileId], references: [id])
-  profileId    Int            @unique
-  LikesPosts   LikePosts[]
-  LikeComments LikeComments[]
+  id            Int            @id @default(autoincrement())
+  firstName     String         @db.VarChar(255)
+  lastName      String         @db.VarChar(255)
+  email         String         @unique
+  password      String
+  Posts         Post[]
+  Comments      Comment[]
+  Profile       Profile        @relation(fields: [profileId], references: [id])
+  profileId     Int            @unique
+  LikesPosts    LikePosts[]
+  LikesComments LikeComments[]
 }
 
 model Profile {
@@ -46,16 +46,16 @@ model Post {
 }
 
 model Comment {
-  id           String         @id @default(uuid())
-  User         User           @relation(fields: [userId], references: [id])
-  userId       Int
-  Post         Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId       String
-  content      String
-  likes        Int            @default(0)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  LikeComments LikeComments[]
+  id            String         @id @default(uuid())
+  User          User           @relation(fields: [userId], references: [id])
+  userId        Int
+  Post          Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId        String
+  content       String
+  likes         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  LikesComments LikeComments[]
 }
 
 model Topic {
