@@ -3,7 +3,6 @@ const commentsController = require("../controllers/commentsController");
 
 const commentsRouter = Router({ mergeParams: true });
 
-commentsRouter.get("/", commentsController.getPostComments);
 commentsRouter.post("/", commentsController.createComment);
 
 commentsRouter.patch("/:commentId/like", commentsController.updateCommentLikes);
