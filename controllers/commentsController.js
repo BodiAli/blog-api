@@ -33,15 +33,33 @@ exports.createComment = [
 
     const { content } = req.body;
 
-    await prisma.comment.create({
+    const comment = await prisma.comment.create({
       data: {
         content,
         postId,
         userId: req.user.id,
       },
+      include: {
+        User: {
+          include: {
+            Profile: {
+              select: {
+                profileImgUrl: true,
+              },
+            },
+          },
+          omit: {
+            email: true,
+            password: true,
+            profileId: true,
+          },
+        },
+      },
     });
 
-    res.status(201).json({ msg: "Comment created successfully!" });
+    const formattedComment = { ...comment, commentLiked: false };
+
+    res.status(201).json({ msg: "Comment created successfully!", comment: formattedComment });
   },
 ];
 
