@@ -67,6 +67,7 @@ exports.updateComment = [
   passport.authenticate("jwt", { session: false }),
   validateComment,
   async (req, res) => {
+    const { id: userId } = req.user;
     const { postId, commentId } = req.params;
 
     const [post, comment] = await Promise.all([
@@ -79,6 +80,7 @@ exports.updateComment = [
       prisma.comment.findUnique({
         where: {
           id: commentId,
+          userId,
         },
       }),
     ]);
@@ -109,6 +111,7 @@ exports.updateComment = [
     await prisma.comment.update({
       where: {
         id: commentId,
+        userId,
       },
 
       data: {
@@ -217,6 +220,7 @@ exports.deleteComment = [
   passport.authenticate("jwt", { session: false }),
 
   async (req, res) => {
+    const { id: userId } = req.user;
     const { postId, commentId } = req.params;
 
     const [post, comment] = await Promise.all([
@@ -243,6 +247,13 @@ exports.deleteComment = [
     if (!comment) {
       res.status(404).json({
         error: "Comment not found! it may have been moved, deleted or it might have never existed.",
+      });
+      return;
+    }
+
+    if (comment.userId !== userId && post.userId !== userId) {
+      res.status(403).json({
+        error: "You are not allowed to delete this comment",
       });
       return;
     }
