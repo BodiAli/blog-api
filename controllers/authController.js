@@ -51,14 +51,12 @@ const validateSignUp = [
     .withMessage(`Password ${emptyErr}`)
     .isLength({ min: 5 })
     .withMessage(`Password ${minLengthErr}`),
-  body("confirmPassword")
-    .optional({ values: "falsy" })
-    .custom((value, { req }) => {
-      if (value !== req.body.password) {
-        throw new Error("Password and password confirmation do not match.");
-      }
-      return true;
-    }),
+  body("confirmPassword").custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error("Password and password confirmation do not match.");
+    }
+    return true;
+  }),
   body("userImage")
     .optional({ values: "falsy" })
     .custom(async (value, { req }) => {
@@ -175,10 +173,10 @@ exports.validateToken = [
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     res.status(200).json({
-        id: req.user.id,
-        firstName: req.user.firstName,
-        lastName: req.user.lastName,
-        Profile: { profileImgUrl: req.user.Profile.profileImgUrl },
+      id: req.user.id,
+      firstName: req.user.firstName,
+      lastName: req.user.lastName,
+      Profile: { profileImgUrl: req.user.Profile.profileImgUrl },
     });
   },
 ];
