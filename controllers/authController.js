@@ -57,21 +57,19 @@ const validateSignUp = [
     }
     return true;
   }),
-  body("userImage")
-    .optional({ values: "falsy" })
-    .custom(async (value, { req }) => {
-      if (req.file.size > 3145728) {
-        await fs.rm(req.file.path);
-        throw new Error("File cannot be larger than 3MB.");
-      } else if (!req.file.mimeType.startsWith("image/")) {
-        await fs.rm(req.file.path);
-        throw new Error("File uploaded is not of type image.");
-      } else if (req.file.size === 0) {
-        await fs.rm(req.file.path);
-        throw new Error("File cannot be empty.");
-      }
-      return true;
-    }),
+  body("userImage").custom(async (value, { req }) => {
+    if (req.file.size > 3145728) {
+      await fs.rm(req.file.path);
+      throw new Error("File cannot be larger than 3MB.");
+    } else if (!req.file.mimetype.startsWith("image/")) {
+      await fs.rm(req.file.path);
+      throw new Error("File uploaded is not of type image.");
+    } else if (req.file.size === 0) {
+      await fs.rm(req.file.path);
+      throw new Error("File cannot be empty.");
+    }
+    return true;
+  }),
 ];
 
 exports.createUser = [
@@ -82,6 +80,9 @@ exports.createUser = [
 
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
+      if (req.file) {
+        await fs.rm(req.file.path);
+      }
       return;
     }
 
