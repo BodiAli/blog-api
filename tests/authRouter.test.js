@@ -6,6 +6,8 @@ const authRouter = require("../routes/authRouter");
 const prisma = require("../prisma/prismaClient");
 const issueJwt = require("../lib/issueJWT");
 
+const { vi } = await import("vitest");
+
 require("../config/passportConfig");
 
 const app = express();
@@ -14,11 +16,11 @@ app.use(express.json());
 
 app.use("/auth", authRouter);
 
-jest.spyOn(jwt, "sign");
+vi.spyOn(jwt, "sign");
 
-jest
-  .spyOn(cloudinary.uploader, "upload")
-  .mockImplementation(() => Promise.resolve({ secure_url: "url", public_id: "id" }));
+vi.spyOn(cloudinary.uploader, "upload").mockImplementation(() =>
+  Promise.resolve({ secure_url: "url", public_id: "id" })
+);
 
 describe("authRouter Routes", () => {
   afterAll(async () => {
@@ -30,8 +32,8 @@ describe("authRouter Routes", () => {
   });
   const buffer = Buffer.alloc(10);
 
-  test("signup auth route works", (done) => {
-    request(app)
+  test("signup auth route works", async () => {
+    await request(app)
       .post("/auth/sign-up")
       .attach("userImage", buffer, { filename: "profilePicture.jpg" })
       .field("firstName", "bodi")
@@ -41,15 +43,13 @@ describe("authRouter Routes", () => {
       .field("confirmPassword", "12345")
       .expect("Content-Type", /json/)
       .expect({ token: "Bearer token" })
-      .expect(201)
-      .then(async () => {
-        expect(await prisma.user.count()).toEqual(1);
-        done();
-      });
+      .expect(201);
+
+    expect(await prisma.user.count()).toEqual(1);
   });
 
-  test("signup route should send a 400 bad request with errors in the response body if input request body is invalid", (done) => {
-    request(app)
+  test("signup route should send a 400 bad request with errors in the response body if input request body is invalid", async () => {
+    await request(app)
       .post("/auth/sign-up")
       .attach("userImage", buffer, { filename: "invalidType.jpg", contentType: "video/mp4" })
       .field("firstName", "bodi")
@@ -105,26 +105,26 @@ describe("authRouter Routes", () => {
         ],
       })
       .expect("Content-Type", /json/)
-      .expect(400, done);
+      .expect(400);
   });
 
-  test("login auth route works", (done) => {
-    request(app)
+  test("login auth route works", async () => {
+    await request(app)
       .post("/auth/log-in")
       .type("json")
       .send({ email: "bodi@gmail.com", password: "12345" })
-      .expect("Content-Type", /json/, done)
+      .expect("Content-Type", /json/)
       .expect({ token: "Bearer token" })
       .expect(200);
   });
 
-  test("login controller should send a 400 status code if email or password are invalid", (done) => {
-    request(app)
+  test("login controller should send a 400 status code if email or password are invalid", async () => {
+    await request(app)
       .post("/auth/log-in")
       .type("json")
       .send({ email: "bodi@gmail.com", password: "invalid password" })
       .expect("Content-Type", /json/)
-      .expect({ error: "Incorrect email or password" }, done)
+      .expect({ error: "Incorrect email or password" })
       .expect(401);
   });
 
