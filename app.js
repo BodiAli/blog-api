@@ -12,7 +12,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: [process.env.CLIENT_PUBLIC_URL, process.env.CLIENT_CMS_URL]
+    origin: [process.env.CLIENT_PUBLIC_URL, process.env.CLIENT_CMS_URL],
   })
 );
 app.use(express.json());
