@@ -1,10 +1,13 @@
+const { resetTables } = require("@prisma/client/sql");
 const prisma = require("../../prisma/prismaClient");
 
-const { afterAll } = await import("vitest");
+const { beforeAll, afterAll } = await import("vitest");
+
+beforeAll(async () => {
+  await prisma.$connect();
+});
 
 afterAll(async () => {
-  await prisma.comment.deleteMany();
-  await prisma.topic.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.$queryRawTyped(resetTables());
+  await prisma.$disconnect();
 });
