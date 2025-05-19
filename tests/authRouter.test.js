@@ -23,18 +23,6 @@ vi.spyOn(cloudinary.uploader, "upload").mockImplementation(() =>
 );
 
 describe("authRouter", () => {
-  beforeAll(async () => {
-    prisma.$connect();
-    await prisma.comment.deleteMany();
-    await prisma.topic.deleteMany();
-    await prisma.post.deleteMany();
-    await prisma.user.deleteMany();
-  });
-
-  afterAll(async () => {
-    prisma.$disconnect();
-  });
-
   beforeEach(() => {
     jwt.sign.mockImplementation(() => "token");
   });
@@ -173,7 +161,6 @@ describe("authRouter", () => {
 
     describe("given invalid token", () => {
       it("should return 401 unauthorized", async () => {
-        console.log(jwt.sign());
         await request(app).get("/auth/validate").auth("invalid token").expect(401);
       });
     });
