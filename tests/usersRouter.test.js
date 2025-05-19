@@ -41,11 +41,6 @@ describe("userRouter routes", () => {
     });
   });
 
-  afterAll(async () => {
-    await prisma.post.deleteMany();
-    await prisma.user.deleteMany();
-  });
-
   test("/users/posts route works to get user posts", async () => {
     const token = issueJwt(user);
 

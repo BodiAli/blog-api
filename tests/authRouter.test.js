@@ -23,10 +23,6 @@ vi.spyOn(cloudinary.uploader, "upload").mockImplementation(() =>
 );
 
 describe("authRouter Routes", () => {
-  afterAll(async () => {
-    await prisma.user.deleteMany();
-  });
-
   beforeEach(() => {
     jwt.sign.mockImplementation(() => "token");
   });
