@@ -1,6 +1,6 @@
 const express = require("express");
 const request = require("supertest");
-const userRouter = require("../routes/usersRouter");
+const usersRouter = require("../routes/usersRouter");
 const prisma = require("../prisma/prismaClient");
 const issueJwt = require("../lib/issueJWT");
 
@@ -9,9 +9,10 @@ require("../config/passportConfig");
 const app = express();
 
 app.use(express.json());
-app.use("/users", userRouter);
 
-describe("userRouter routes", () => {
+app.use("/users", usersRouter);
+
+describe("usersRouter routes", () => {
   let user;
   beforeAll(async () => {
     user = await prisma.user.create({
@@ -39,30 +40,37 @@ describe("userRouter routes", () => {
         },
       },
     });
+
+    console.log(await prisma.user.findMany());
   });
 
-  test("/users/posts route works to get user posts", async () => {
-    const token = issueJwt(user);
+  describe("get user's posts", () => {
+    describe("given logged in user", () => {
+      it("should return 200 and user's posts", async () => {
+        const token = issueJwt(user);
 
-    const response = await request(app)
-      .get("/users/posts")
-      .auth(token, { type: "bearer" })
-      .expect("Content-Type", /json/);
+        const response = await request(app).get("/users/posts").auth(token, { type: "bearer" });
 
-    expect(response.body.posts).toEqual(
-      expect.arrayContaining([expect.objectContaining({ title: "post title 2", content: "post content 2" })])
-    );
-    expect(response.body.posts.length).toBe(2);
-  });
+        expect(response.body.posts).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ title: "post title 2", content: "post content 2" }),
+          ])
+        );
+        expect(response.body.posts.length).toBe(2);
+      });
+    });
 
-  test("page query sanitizer works", async () => {
-    const token = issueJwt(user);
-    const response = await request(app)
-      .get("/users/posts")
-      .query({ page: "0" })
-      .auth(token, { type: "bearer" })
-      .expect("Content-Type", /json/);
+    describe("given invalid page query", () => {
+      it("should sanitize page query", async () => {
+        const token = issueJwt(user);
+        const response = await request(app)
+          .get("/users/posts")
+          .auth(token, { type: "bearer" })
+          .query({ page: "0" });
 
-    expect(response.body.pages).toBe(1);
+        expect(response.statusCode).toBe(200);
+        expect(response.body.pages).toBe(1);
+      });
+    });
   });
 });
