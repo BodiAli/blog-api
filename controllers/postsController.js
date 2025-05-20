@@ -331,22 +331,20 @@ const validatePost = [
 
       return true;
     }),
-  body("postImage")
-    .optional({ values: "falsy" })
-    .custom(async (value, { req }) => {
-      if (req.file.size > 3145728) {
-        await fs.rm(req.file.path);
-        throw new Error("File cannot be larger than 3MB.");
-      } else if (!req.file.mimeType.startsWith("image/")) {
-        await fs.rm(req.file.path);
-        throw new Error("File uploaded is not of type image.");
-      } else if (req.file.size === 0) {
-        await fs.rm(req.file.path);
-        throw new Error("File cannot be empty.");
-      }
+  body("postImage").custom(async (value, { req }) => {
+    if (req.file.size > 3145728) {
+      await fs.rm(req.file.path);
+      throw new Error("File cannot be larger than 3MB.");
+    } else if (!req.file.mimetype.startsWith("image/")) {
+      await fs.rm(req.file.path);
+      throw new Error("File uploaded is not of type image.");
+    } else if (req.file.size === 0) {
+      await fs.rm(req.file.path);
+      throw new Error("File cannot be empty.");
+    }
 
-      return true;
-    }),
+    return true;
+  }),
   body("published").optional({ values: "falsy" }),
 ];
 
@@ -354,10 +352,13 @@ exports.createPost = [
   passport.authenticate("jwt", { session: false }),
   upload.single("postImage"),
   validatePost,
-  async (req, res) => {
+  async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
+      if (req.file) {
+        await fs.rm(req.file.path);
+      }
       return;
     }
 
@@ -365,14 +366,19 @@ exports.createPost = [
     let imgUrl = null;
 
     if (req.file) {
-      const { secure_url: url, public_id: id } = await cloudinary.uploader.upload(req.file.path, {
-        resource_type: "image",
-        format: "jpg",
-      });
+      try {
+        const { secure_url: url, public_id: id } = await cloudinary.uploader.upload(req.file.path, {
+          resource_type: "image",
+          format: "jpg",
+        });
 
-      cloudId = id;
-      imgUrl = url;
-      await fs.rm(req.file.path);
+        cloudId = id;
+        imgUrl = url;
+        await fs.rm(req.file.path);
+      } catch (err) {
+        await fs.rm(req.file.path);
+        next(err);
+      }
     }
 
     const { title, content, published, topics } = req.body;
