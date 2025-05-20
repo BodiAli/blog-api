@@ -102,6 +102,7 @@ exports.createUser = [
       } catch (error) {
         await fs.rm(req.file.path);
         next(error);
+        return;
       }
     }
 
