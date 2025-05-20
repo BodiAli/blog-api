@@ -26,6 +26,7 @@ describe("authRouter", () => {
   beforeEach(() => {
     jwt.sign.mockImplementation(() => "token");
   });
+
   const buffer = Buffer.alloc(10);
 
   describe("post sign-up", () => {
