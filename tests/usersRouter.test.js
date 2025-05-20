@@ -40,8 +40,6 @@ describe("usersRouter routes", () => {
         },
       },
     });
-
-    console.log(await prisma.user.findMany());
   });
 
   describe("get user's posts", () => {
