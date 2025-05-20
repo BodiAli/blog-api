@@ -1,13 +1,8 @@
 const { resetTables } = require("@prisma/client/sql");
 const prisma = require("../../prisma/prismaClient");
 
-const { beforeAll, afterAll } = await import("vitest");
-
-beforeAll(async () => {
-  await prisma.$connect();
-});
+const { afterAll } = await import("vitest");
 
 afterAll(async () => {
-  await prisma.$queryRawTyped(resetTables());
-  await prisma.$disconnect();
+  await prisma.$executeRaw(resetTables());
 });
