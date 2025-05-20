@@ -3,4 +3,5 @@ TRUNCATE TABLE
       "Topic",
       "Post",
       "Profile",
-      "User";
+      "User"
+CASCADE;
