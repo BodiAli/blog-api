@@ -378,6 +378,7 @@ exports.createPost = [
       } catch (err) {
         await fs.rm(req.file.path);
         next(err);
+        return;
       }
     }
 
@@ -414,10 +415,13 @@ exports.updatePost = [
   passport.authenticate("jwt", { session: false }),
   upload.single("postImage"),
   validatePost,
-  async (req, res) => {
+  async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
+      if (req.file) {
+        await fs.rm(req.file.path);
+      }
       return;
     }
 
@@ -432,6 +436,7 @@ exports.updatePost = [
     });
 
     if (!post) {
+      await fs.rm(req.file.path);
       res
         .status(404)
         .json({ error: "Post not found! it may have been moved, deleted or it might have never existed." });
@@ -443,10 +448,15 @@ exports.updatePost = [
 
     if (req.file) {
       if (post.imgUrl) {
-        const { result } = await cloudinary.uploader.destroy(post.cloudId, { resource_type: "image" });
-
-        if (result !== "ok") {
-          throw new Error("Error updating post, please try again later.");
+        try {
+          const { result } = await cloudinary.uploader.destroy(post.cloudId, { resource_type: "image" });
+          if (result !== "ok") {
+            throw new Error("Error updating post, please try again later.");
+          }
+        } catch (err) {
+          await fs.rm(req.file.path);
+          next(err);
+          return;
         }
       }
 
