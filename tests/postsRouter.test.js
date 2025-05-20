@@ -20,6 +20,10 @@ vi.spyOn(cloudinary.v2.uploader, "upload").mockResolvedValue({
   public_id: "postImgId",
 });
 
+vi.spyOn(cloudinary.v2.uploader, "destroy").mockResolvedValue({
+  result: "ok",
+});
+
 describe("postsRouter routes", () => {
   let user;
   let post;
@@ -41,6 +45,8 @@ describe("postsRouter routes", () => {
       data: {
         content: "post content",
         title: "post title",
+        imgUrl: "imgUrl",
+        cloudId: "imgId",
         User: {
           connect: {
             id: user.id,
@@ -190,6 +196,87 @@ describe("postsRouter routes", () => {
         ]);
 
         expect(createdPost.published).toBeTruthy();
+
+        await prisma.post.deleteMany({
+          where: {
+            title: "post title 2",
+          },
+        });
+      });
+    });
+  });
+
+  describe("update post", () => {
+    describe("given unauthenticated user", () => {
+      it("should return unauthorized 401", async () => {
+        await request(app).put(`/posts/${post.id}`).expect(401);
+      });
+    });
+
+    describe("given invalid post inputs", () => {
+      it("should return bad request 400 with errors", async () => {
+        const buffer = Buffer.alloc(10);
+
+        const token = issueJwt(user);
+        await request(app)
+          .put(`/posts/${post.id}`)
+          .auth(token, { type: "bearer" })
+          .attach("postImage", buffer, { filename: "post-cover.jpg" })
+          .field("content", "content updated")
+          .expect("Content-Type", /json/)
+          .expect({
+            errors: [
+              {
+                location: "body",
+                msg: "Title can not be empty.",
+                path: "title",
+                type: "field",
+                value: "",
+              },
+            ],
+          })
+          .expect(400);
+      });
+    });
+
+    describe("given not found post", () => {
+      it("should return not found 404 with error message", async () => {
+        const buffer = Buffer.alloc(10);
+
+        const token = issueJwt(user);
+        await request(app)
+          .put("/posts/1234")
+          .auth(token, { type: "bearer" })
+          .attach("postImage", buffer, { filename: "post-cover.jpg" })
+          .field("content", "updated content")
+          .field("title", "updated title")
+          .expect("Content-Type", /json/)
+          .expect(404)
+          .expect({
+            error: "Post not found! it may have been moved, deleted or it might have never existed.",
+          });
+      });
+    });
+
+    describe("given valid post inputs", () => {
+      it("should update post", async () => {
+        const buffer = Buffer.alloc(10);
+
+        const token = issueJwt(user);
+        await request(app)
+          .put(`/posts/${post.id}`)
+          .auth(token, { type: "bearer" })
+          .attach("postImage", buffer, { filename: "post-cover.jpg" })
+          .field("content", "updated content")
+          .field("title", "updated title")
+          .expect("Content-Type", /json/)
+          .expect({
+            msg: "Post updated successfully!",
+          })
+          .expect(200);
+
+        expect(post.cloudId).toBe("postImgId");
+        expect(post.imgUrl).toBe("postImgUrl");
       });
     });
   });
