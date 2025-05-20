@@ -129,6 +129,33 @@ describe("postsRouter routes", () => {
       });
     });
 
+    describe("given invalid post fields", () => {
+      it("should return 400 status with errors", async () => {
+        const token = issueJwt(user);
+
+        const buffer = Buffer.alloc(10);
+
+        await request(app)
+          .post("/posts")
+          .auth(token, { type: "bearer" })
+          .attach("postImage", buffer, { filename: "post-cover.jpg" })
+          .field("content", "post content")
+          .expect("Content-Type", /json/)
+          .expect({
+            errors: [
+              {
+                type: "field",
+                value: "",
+                msg: "Title can not be empty.",
+                path: "title",
+                location: "body",
+              },
+            ],
+          })
+          .expect(400);
+      });
+    });
+
     describe("given valid post fields", () => {
       it("should create a new post", async () => {
         const buffer = Buffer.alloc(10);
