@@ -75,7 +75,7 @@ const validateSignUp = [
 exports.createUser = [
   upload.single("userImage"),
   validateSignUp,
-  async (req, res) => {
+  async (req, res, next) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -90,14 +90,19 @@ exports.createUser = [
     let profileImgUrl = null;
 
     if (req.file) {
-      const { secure_url: url, public_id: id } = await cloudinary.uploader.upload(req.file.path, {
-        resource_type: "image",
-        format: "png",
-      });
+      try {
+        const { secure_url: url, public_id: id } = await cloudinary.uploader.upload(req.file.path, {
+          resource_type: "image",
+          format: "png",
+        });
 
-      cloudId = id;
-      profileImgUrl = url;
-      await fs.rm(req.file.path);
+        cloudId = id;
+        profileImgUrl = url;
+        await fs.rm(req.file.path);
+      } catch (error) {
+        await fs.rm(req.file.path);
+        next(error);
+      }
     }
 
     const { firstName, lastName, email, password } = req.body;
