@@ -283,6 +283,7 @@ describe("postsRouter routes", () => {
         // TODO: Debug why the created post is not updated
         expect(post.cloudId).toBe("postImgId");
         expect(post.imgUrl).toBe("postImgUrl");
+        expect(post.title).toBe("updated title");
       });
     });
   });
