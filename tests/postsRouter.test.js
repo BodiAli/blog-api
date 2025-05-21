@@ -264,7 +264,7 @@ describe("postsRouter routes", () => {
     });
 
     describe("given valid post inputs", () => {
-      it.skip("should update post", async () => {
+      it("should update post", async () => {
         const buffer = Buffer.alloc(10);
 
         const token = issueJwt(user);
@@ -280,10 +280,15 @@ describe("postsRouter routes", () => {
           })
           .expect(200);
 
-        // TODO: Debug why the created post is not updated
-        expect(post.cloudId).toBe("postImgId");
-        expect(post.imgUrl).toBe("postImgUrl");
-        expect(post.title).toBe("updated title");
+        const updatedPost = await prisma.post.findUnique({
+          where: {
+            id: post.id,
+          },
+        });
+
+        expect(updatedPost.cloudId).toBe("postImgId");
+        expect(updatedPost.imgUrl).toBe("postImgUrl");
+        expect(updatedPost.title).toBe("updated title");
       });
     });
   });
@@ -324,7 +329,14 @@ describe("postsRouter routes", () => {
 
         expect(response.body.msg).toBe("Post updated successfully!");
         expect(response.body.post).toEqual(expect.objectContaining({ id: post.id, published: false }));
-        console.log("created", post.published); // true (the default value)
+
+        const updatedPost = await prisma.post.findUnique({
+          where: {
+            id: post.id,
+          },
+        });
+
+        expect(updatedPost.published).toBeFalsy();
       });
     });
   });
