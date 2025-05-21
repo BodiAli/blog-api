@@ -535,8 +535,6 @@ exports.updatePostPublish = [
       return;
     }
 
-    console.log("1", published);
-
     const post = await prisma.post.update({
       data: {
         published,
@@ -553,7 +551,6 @@ exports.updatePostPublish = [
       },
     });
 
-    console.log("2", post.published);
     res.status(200).json({ msg: "Post updated successfully!", post });
   },
 ];
