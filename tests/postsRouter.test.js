@@ -52,6 +52,18 @@ describe("postsRouter routes", () => {
         title: "post title",
         imgUrl: "imgUrl",
         cloudId: "imgId",
+        likes: 1,
+        Topics: {
+          create: [
+            {
+              name: "topic 1",
+            },
+            {
+              name: "topic 2",
+            },
+          ],
+        },
+
         User: {
           connect: {
             id: user.id,
@@ -267,6 +279,10 @@ describe("postsRouter routes", () => {
       it("should update post", async () => {
         const buffer = Buffer.alloc(10);
 
+        const topics = await prisma.topic.findMany();
+
+        expect(topics.length).toBe(2);
+
         const token = issueJwt(user);
         await request(app)
           .put(`/posts/${post.id}`)
@@ -285,6 +301,9 @@ describe("postsRouter routes", () => {
             id: post.id,
           },
         });
+
+        const updatedTopics = await prisma.topic.findMany();
+        expect(updatedTopics.length).toBe(0);
 
         expect(updatedPost.cloudId).toBe("postImgId");
         expect(updatedPost.imgUrl).toBe("postImgUrl");
@@ -337,6 +356,120 @@ describe("postsRouter routes", () => {
         });
 
         expect(updatedPost.published).toBeFalsy();
+      });
+    });
+  });
+
+  describe("update post likes", () => {
+    describe("given unauthenticated user", () => {
+      it("it should return 401 unauthorized", async () => {
+        await request(app).patch(`/posts/${post.id}/like`).expect(401);
+      });
+    });
+
+    describe("given not found post", () => {
+      it("should return 404 not found with message", async () => {
+        const token = issueJwt(user);
+
+        await request(app)
+          .patch("/posts/123/like")
+          .auth(token, { type: "bearer" })
+          .expect("Content-Type", /json/)
+          .expect({
+            error: "Post not found! it may have been moved, deleted or it might have never existed.",
+          })
+          .expect(404);
+      });
+    });
+
+    describe("given already liked post", () => {
+      it("should unlike post", async () => {
+        const token = issueJwt(user);
+
+        await request(app).patch(`/posts/${post.id}/like`).auth(token, { type: "bearer" }).expect(204);
+
+        const existingLike = await prisma.likePosts.findUnique({
+          where: {
+            userId_postId: {
+              postId: post.id,
+              userId: user.id,
+            },
+          },
+        });
+
+        const updatedPost = await prisma.post.findUnique({
+          where: {
+            id: post.id,
+          },
+        });
+
+        expect(updatedPost.likes).toBe(0);
+        expect(existingLike).toBeNull();
+      });
+    });
+
+    describe("given not liked post", () => {
+      it("should unlike post", async () => {
+        const token = issueJwt(user);
+
+        await request(app).patch(`/posts/${post.id}/like`).auth(token, { type: "bearer" }).expect(204);
+
+        const existingLike = await prisma.likePosts.findUnique({
+          where: {
+            userId_postId: {
+              postId: post.id,
+              userId: user.id,
+            },
+          },
+        });
+
+        const updatedPost = await prisma.post.findUnique({
+          where: {
+            id: post.id,
+          },
+        });
+
+        expect(updatedPost.likes).toBe(1);
+        expect(existingLike).toEqual(expect.objectContaining({ postId: post.id, userId: user.id }));
+      });
+    });
+  });
+
+  describe("delete post", () => {
+    describe("given unauthenticated user", () => {
+      it("should return 401 unauthorized", async () => {
+        await request(app).delete(`/posts/${post.id}`).expect(401);
+      });
+    });
+
+    describe("given not found post", () => {
+      it("should return 404 and an error message", async () => {
+        const token = issueJwt(user);
+
+        await request(app)
+          .delete("/posts/123")
+          .auth(token, { type: "bearer" })
+          .expect("Content-Type", /json/)
+          .expect({
+            error: "Post not found! it may have been moved, deleted or it might have never existed.",
+          })
+          .expect(404);
+      });
+    });
+
+    describe("given post found", () => {
+      it("should delete post", async () => {
+        const token = issueJwt(user);
+
+        await request(app).delete(`/posts/${post.id}`).auth(token, { type: "bearer" }).expect(204);
+
+        const deletedPost = await prisma.post.findUnique({
+          where: {
+            id: post.id,
+          },
+        });
+
+        expect(deletedPost).toBeNull();
       });
     });
   });
