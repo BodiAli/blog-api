@@ -15,11 +15,6 @@ app.use(express.json());
 
 app.use("/posts", postsRouter);
 
-app.use((error, req, res, _next) => {
-  console.error(error);
-  res.status(500).json({ error: error.message ? error.message : error });
-});
-
 vi.spyOn(cloudinary.v2.uploader, "upload").mockResolvedValue({
   secure_url: "postImgUrl",
   public_id: "postImgId",
